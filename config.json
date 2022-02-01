@@ -1,0 +1,7 @@
+{
+    "plain_word": "@plain@",
+    "formatted_word": "@formatted@",
+    "original_word": "@original@",
+    "input_word": "@input_%d@",
+	"libre_office_path": "C:/Program Files/LibreOffice/program/soffice.exe"
+}

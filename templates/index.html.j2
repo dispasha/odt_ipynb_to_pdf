@@ -1,0 +1,18 @@
+{%- extends 'base.html.j2' -%}
+
+{%- block body_header -%}
+
+<body>
+
+{%- endblock body_header -%}
+
+{% block body_footer %}
+</body>
+{% endblock body_footer %}
+
+{% block footer %}
+{% block footer_js %}
+{% endblock footer_js %}
+{{ super() }}
+</html>
+{% endblock footer %}

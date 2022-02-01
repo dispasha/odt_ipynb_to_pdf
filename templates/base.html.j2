@@ -1,0 +1,213 @@
+{%- extends 'display_priority.j2' -%}
+{% from 'celltags.j2' import celltags %}
+
+{% block codecell %}
+{{ super() }}
+{%- endblock codecell %}
+
+{% block input_group -%}
+<div class="jp-Cell-inputWrapper jp-Notebook">
+<div class="jp-InputArea jp-Cell-inputArea">
+{{ super() }}
+</div>
+</div>
+{% endblock input_group %}
+
+{% block input %}
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+{{ cell.source | highlight_code(metadata=cell.metadata) }}
+     </div>
+</div>
+{%- endblock input %}
+
+{% block output_group %}
+{{ super() }}
+{% endblock output_group %}
+
+{% block outputs %}
+{{ super() }}
+{% endblock outputs %}
+
+{% block in_prompt -%}
+<span class="jp-InputPrompt jp-InputArea-prompt">
+    {%- if cell.execution_count is defined -%}
+        In&nbsp;[{{ cell.execution_count|replace(None, "&nbsp;") }}]:
+    {%- else -%}
+        In&nbsp;[&nbsp;]:
+    {%- endif -%}
+</span>
+{%- endblock in_prompt %}
+
+{% block empty_in_prompt -%}
+<span class="jp-InputPrompt jp-InputArea-prompt">
+</span>
+{%- endblock empty_in_prompt %}
+
+{#
+  output_prompt doesn't do anything in HTML,
+  because there is a promptspan in each output area (see output block)
+ #}
+{% block output_prompt %}
+{% endblock output_prompt %}
+
+{% block output_area_prompt %}
+    <span class="jp-OutputPrompt jp-OutputArea-prompt">
+{%- if output.output_type == 'execute_result' -%}
+    {%- if cell.execution_count is defined -%}
+        Out[{{ cell.execution_count|replace(None, "&nbsp;") }}]:
+    {%- else -%}
+        Out[&nbsp;]:
+    {%- endif -%}
+{%- endif -%}
+    </span>
+{% endblock output_area_prompt %}
+
+{% block output %}
+{% if resources.global_content_filter.include_output_prompt %}
+    {{ self.output_area_prompt() }}
+{% endif %}
+{{ super() }}
+{% endblock output %}
+
+{% block markdowncell scoped %}
+{%- if resources.global_content_filter.include_input_prompt-%}
+    {{ self.empty_in_prompt() }}
+{%- endif -%}
+<span class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput {{ celltags(cell) }}" data-mime-type="text/markdown">
+{{ cell.source  | markdown2html | strip_files_prefix }}
+</span>
+
+
+{%- endblock markdowncell %}
+
+{% block unknowncell scoped %}
+unknown type  {{ cell.type }}
+{% endblock unknowncell %}
+
+{% block execute_result -%}
+{%- set extra_class="jp-OutputArea-executeResult" -%}
+{% block data_priority scoped %}
+{{ super() }}
+{% endblock data_priority %}
+{%- set extra_class="" -%}
+{%- endblock execute_result %}
+
+{% block stream_stdout -%}
+<span class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+
+{{- output.text | ansi2html -}}
+
+</span>
+{%- endblock stream_stdout %}
+
+{% block stream_stderr -%}
+<span class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+
+{{- output.text | ansi2html -}}
+
+</span>
+{%- endblock stream_stderr %}
+
+{% block stream_stdin -%}
+{%- if resources.global_content_filter.include_output_stdin -%}
+<span class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stdin">
+
+{{- output.text | ansi2html -}}
+
+</span>
+{%- endif %}
+{%- endblock stream_stdin %}
+
+{% block data_svg scoped -%}
+<span class="jp-RenderedSVG jp-OutputArea-output {{ extra_class }}" data-mime-type="image/svg+xml">
+{%- if output.svg_filename %}
+<img src="{{ output.svg_filename | posix_path }}">
+{%- else %}
+{{ output.data['image/svg+xml'] }}
+{%- endif %}
+</span>
+{%- endblock data_svg %}
+
+{% block data_html scoped -%}
+<span class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output {{ extra_class }}" data-mime-type="text/html">
+{{ output.data['text/html'] }}
+</span>
+{%- endblock data_html %}
+
+{% block data_markdown scoped -%}
+<span class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-OutputArea-output {{ extra_class }}" data-mime-type="text/markdown">
+{{ output.data['text/markdown'] | markdown2html }}
+</span>
+{%- endblock data_markdown %}
+
+{% block data_png scoped %}
+<span class="jp-RenderedImage jp-OutputArea-output {{ extra_class }}">
+{%- if 'image/png' in output.metadata.get('filenames', {}) %}
+<img src="{{ output.metadata.filenames['image/png'] | posix_path }}"
+{%- else %}
+<img src="data:image/png;base64,{{ output.data['image/png'] }}"
+{%- endif %}
+{%- set width=output | get_metadata('width', 'image/png') -%}
+{%- if width is not none %}
+width={{ width }}
+{%- endif %}
+{%- set height=output | get_metadata('height', 'image/png') -%}
+{%- if height is not none %}
+height={{ height }}
+{%- endif %}
+{%- if output | get_metadata('unconfined', 'image/png') %}
+class="unconfined"
+{%- endif %}
+>
+</span>
+{%- endblock data_png %}
+
+{% block data_jpg scoped %}
+<span class="jp-RenderedImage jp-OutputArea-output {{ extra_class }}">
+{%- if 'image/jpeg' in output.metadata.get('filenames', {}) %}
+<img src="{{ output.metadata.filenames['image/jpeg'] | posix_path }}"
+{%- else %}
+<img src="data:image/jpeg;base64,{{ output.data['image/jpeg'] }}"
+{%- endif %}
+{%- set width=output | get_metadata('width', 'image/jpeg') -%}
+{%- if width is not none %}
+width={{ width }}
+{%- endif %}
+{%- set height=output | get_metadata('height', 'image/jpeg') -%}
+{%- if height is not none %}
+height={{ height }}
+{%- endif %}
+{%- if output | get_metadata('unconfined', 'image/jpeg') %}
+class="unconfined"
+{%- endif %}
+>
+</span>
+{%- endblock data_jpg %}
+
+{% block data_latex scoped %}
+<span class="jp-RenderedLatex jp-OutputArea-output {{ extra_class }}" data-mime-type="text/latex">
+{{ output.data['text/latex'] | e }}
+</span>
+{%- endblock data_latex %}
+
+{% block error -%}
+<span class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+
+{{- super() -}}
+
+</span>
+{%- endblock error %}
+
+{%- block data_text scoped %}
+<span class="jp-RenderedText jp-OutputArea-output {{ extra_class }}" data-mime-type="text/plain">
+
+{{- output.data['text/plain'] | ansi2html -}}
+
+</span>
+{%- endblock -%}
+
+
+
+
+
